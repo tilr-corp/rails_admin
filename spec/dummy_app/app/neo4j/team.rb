@@ -22,10 +22,10 @@ class Team
   property :custom_field, type: String
 
   has_many :in, :players, origin: :team#, order: :_id.asc
-  #has_and_belongs_to_many :fans
+  has_many :out, :fans, type: :HAS_FAN
   has_many :in, :comments, origin: :commentable
 
-  validates_presence_of :division_id, only_integer: true
+  #validates_presence_of :division
   validates_presence_of :manager
   validates_numericality_of :founded, only_integer: true
   validates_numericality_of :wins, only_integer: true

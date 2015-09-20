@@ -18,7 +18,7 @@ FactoryGirl.define do
   end
 
   factory :team do
-    sequence(:division_id)
+    association :division
     sequence(:name) { |n| "Team #{n}" }
     sequence(:manager) { |n| "Manager #{n}" }
     sequence(:founded)

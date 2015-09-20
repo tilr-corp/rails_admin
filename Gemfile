@@ -2,6 +2,8 @@ source 'https://rubygems.org'
 
 gem 'appraisal', '>= 2.0'
 gem 'devise'
+gem 'devise-neo4j', '~> 2.0.0'
+
 
 group :mongoid do
   gem 'mongoid', '~> 4.0.0'
@@ -10,8 +12,10 @@ group :mongoid do
 end
 
 group :neo4j do
-  gem 'neo4j', github: 'neo4jrb/neo4j'
-  gem 'neo4j-core', github: 'neo4jrb/neo4j-core'
+  gem 'neo4j', path: '/Users/brian/github/neo4jrb/neo4j'
+  gem 'neo4j-core', path: '/Users/brian/github/neo4jrb/neo4j-core'
+  gem 'neo4jrb-paperclip', require: 'neo4jrb_paperclip'
+  gem 'kaminari-neo4j', path: '/Users/brian/github/megorei/kaminari-neo4j'
 end
 
 group :active_record do

@@ -1,7 +1,7 @@
 class Image
   include Neo4j::ActiveNode
-  #include Mongoid::Paperclip
+  include Neo4jrb::Paperclip
 
-  has_mongoid_attached_file :file, styles: {medium: '300x300>', thumb: '100x100>'}
+  has_neo4jrb_attached_file :file, styles: {medium: '300x300>', thumb: '100x100>'}
   validates_attachment_presence :file
 end

@@ -12,6 +12,7 @@ cache: bundler
 env:
   matrix:
     - CI_ORM=mongoid
+    - CI_ORM=neo4j
     - CI_ORM=active_record CI_DB_ADAPTER=sqlite3
   global:
     - JRUBY_OPTS="$JRUBY_OPTS --debug"
@@ -41,10 +42,16 @@ matrix:
       env: CI_ORM=mongoid
       gemfile: gemfiles/rails_4.0.gemfile
     - rvm: 2.2
+      env: CI_ORM=neo4j
+      gemfile: gemfiles/rails_4.0.gemfile      
+    - rvm: 2.2
       env: CI_ORM=active_record CI_DB_ADAPTER=sqlite3
       gemfile: gemfiles/rails_4.1.gemfile
     - rvm: 2.2
       env: CI_ORM=mongoid
+      gemfile: gemfiles/rails_4.1.gemfile
+    - rvm: 2.2
+      env: CI_ORM=neo4j
       gemfile: gemfiles/rails_4.1.gemfile
     - rvm: 2.2
       env: CI_ORM=active_record CI_DB_ADAPTER=mysql2
@@ -52,15 +59,25 @@ matrix:
     - rvm: 2.2
       env: CI_ORM=active_record CI_DB_ADAPTER=postgresql CI_DB_USERNAME=postgres
       gemfile: gemfiles/rails_4.2.gemfile
+
+
     - rvm: jruby-19mode
       env: CI_ORM=mongoid
+      gemfile: gemfiles/rails_4.2.gemfile
+    - rvm: jruby-19mode
+      env: CI_ORM=neo4j
       gemfile: gemfiles/rails_4.2.gemfile
     - rvm: jruby-19mode
       env: CI_ORM=active_record CI_DB_ADAPTER=sqlite3
       gemfile: gemfiles/rails_4.2.gemfile
+
+
     - rvm: jruby-head
       env: CI_ORM=mongoid
       gemfile: gemfiles/rails_4.2.gemfile
+    - rvm: jruby-head
+      env: CI_ORM=neo4j
+      gemfile: gemfiles/rails_4.2.gemfile      
     - rvm: jruby-head
       env: CI_ORM=active_record CI_DB_ADAPTER=sqlite3
       gemfile: gemfiles/rails_4.2.gemfile

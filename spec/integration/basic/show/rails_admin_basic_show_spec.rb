@@ -42,6 +42,8 @@ describe 'RailsAdmin Basic Show', type: :request do
   describe 'show with has-one association' do
     before do
       @player = FactoryGirl.create :player
+      require 'pry'
+      binding.pry
       @draft  = FactoryGirl.create :draft, player: @player
       visit show_path(model_name: 'player', id: @player.id)
     end

@@ -36,8 +36,6 @@ module RailsAdmin
             :float
           when 'Integer'
             :integer
-          when 'Object'
-            object_field_type
           when 'String'
             string_field_type
           when 'Symbol'
@@ -68,15 +66,6 @@ module RailsAdmin
         end
 
       private
-
-        def object_field_type
-          if [:belongs_to, :referenced_in, :embedded_in].
-             include?(model.relations.values.detect { |r| r.foreign_key.try(:to_sym) == name }.try(:macro).try(:to_sym))
-            :bson_object_id
-          else
-            :string
-          end
-        end
 
         def string_field_type
           if ((length = length_validation_lookup) && length < 256) || STRING_TYPE_COLUMN_NAMES.include?(name)

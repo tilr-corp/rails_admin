@@ -4,6 +4,9 @@ CI_ORM = (ENV['CI_ORM'] || :active_record).to_sym
 CI_TARGET_ORMS = [:active_record, :mongoid, :neo4j]
 PK_COLUMN = {active_record: :id, mongoid: :_id, neo4j: :uuid}[CI_ORM]
 
+NEO4J_URL = ENV['NEO4J_URL'] || 'http://neo4j:neo4j@localhost:7474'
+DATABASE_CLEANER_OPTIONS = {neo4j: {connection: {type: :server_db, path: NEO4J_URL}}}
+
 require 'simplecov'
 require 'coveralls'
 
@@ -21,6 +24,7 @@ require 'rspec/rails'
 require 'factory_girl'
 require 'factories'
 require 'database_cleaner'
+DatabaseCleaner[CI_ORM, DATABASE_CLEANER_OPTIONS[CI_ORM]]
 require "orm/#{CI_ORM}"
 
 ActionMailer::Base.delivery_method = :test
@@ -64,7 +68,7 @@ RSpec.configure do |config|
   config.include Capybara::DSL, type: :request
 
   config.before do |example|
-    DatabaseCleaner.strategy = (CI_ORM == :mongoid || example.metadata[:js]) ? :truncation : :transaction
+    DatabaseCleaner.strategy = ([:mongoid, :neo4j].include?(CI_ORM) || example.metadata[:js]) ? :truncation : :transaction
 
     DatabaseCleaner.start
     RailsAdmin::Config.reset

@@ -39,7 +39,8 @@ module RailsAdmin
         #scope = scope.with_associations(*options[:include]) if options[:include]
         scope = scope.limit(options[:limit]) if options[:limit]
         scope = scope.where(primary_key => options[:bulk_ids]) if options[:bulk_ids]
-        scope = scope.where(query_conditions(options[:query])) if options[:query]
+        scope = query_scope(scope, options[:query]) if options[:query]
+
         if options[:filters]
           filter_conditions(options[:filters]).each do |condition|
             scope = scope.where(condition)
@@ -103,6 +104,41 @@ module RailsAdmin
         false
       end
 
+      class WhereBuilder
+        def initialize(scope)
+          @statements = []
+          @values = []
+          @tables = []
+          @scope = scope
+        end
+
+        def add(field, value, operator)
+          field.searchable_columns.flatten.each do |column_infos|
+            column = 'n.' + column_infos[:column].split('.')[1]
+            statement, value1, value2 = StatementBuilder.new(column, column_infos[:type], value, operator).to_statement
+            @statements << statement if statement.present?
+            @values += [value1, value2].compact
+            table, column = column_infos[:column].split('.')
+            @tables.push(table) if column
+          end
+        end
+
+        def build
+          statements_string = @statements.join(' OR ')
+
+          i = 0
+          params = {}
+          statements_string.gsub!(/\?/) do
+            param_name = "query_param_#{i}"
+            params[param_name] = @values[i]
+            i += 1
+            "{#{param_name}}"
+          end
+
+          @scope.where(statements_string).params(params)
+        end
+      end
+
     private
 
       def build_statement(column, type, value, operator)
@@ -111,6 +147,8 @@ module RailsAdmin
 
       def make_field_conditions(field, value, operator)
         conditions_per_collection = {}
+        require 'pry'
+        binding.pry
         field.searchable_columns.each do |column_infos|
           label, property_name = parse_column_name(column_infos[:column])
           statement = build_statement(property_name, column_infos[:type], value, operator)
@@ -121,19 +159,13 @@ module RailsAdmin
         conditions_per_collection
       end
 
-      def query_conditions(query, fields = config.list.fields.select(&:queryable?))
-        statements = []
-
+      def query_scope(scope, query, fields = config.list.fields.select(&:queryable?))
+        wb = WhereBuilder.new(scope)
         fields.each do |field|
-          conditions_per_collection = make_field_conditions(field, query, field.search_operator)
-          statements.concat make_condition_for_current_collection(field, conditions_per_collection)
+          wb.add(field, query, field.search_operator)
         end
-
-        if statements.any?
-          {'$or' => statements}
-        else
-          {}
-        end
+        # OR all query statements
+        wb.build
       end
 
       # filters example => {"string_field"=>{"0055"=>{"o"=>"like", "v"=>"test_value"}}, ...}
@@ -179,6 +211,8 @@ module RailsAdmin
             result.concat conditions
           else
             # otherwise, collect ids of documents that satisfy search condition
+            require 'pry'
+            binding.pry
             result.concat perform_search_on_associated_collection(target_field.name, conditions)
           end
         end
@@ -190,7 +224,7 @@ module RailsAdmin
         return [] unless target_association
         model = target_association.klass
         case target_association.type
-        when :belongs_to, :has_and_belongs_to_many
+        when :has_one
           [{target_association.foreign_key.to_s => {'$in' => model.where('$or' => conditions).all.collect { |r| r.send(target_association.primary_key) }}}]
         when :has_many
           [{target_association.primary_key.to_s => {'$in' => model.where('$or' => conditions).all.collect { |r| r.send(target_association.foreign_key) }}}]
@@ -224,16 +258,26 @@ module RailsAdmin
 
         def unary_operators
           {
-            '_blank' => {@column => {'$in' => [nil, '']}},
-            '_present' => {@column => {'$nin' => [nil, '']}},
-            '_null' => {@column => nil},
-            '_not_null' => {@column => {'$ne' => nil}},
-            '_empty' => {@column => ''},
-            '_not_empty' => {@column => {'$ne' => ''}},
+            '_blank' => ["(#{@column} IS NULL OR #{@column} = '')"],
+            '_present' => ["(#{@column} IS NOT NULL AND #{@column} != '')"],
+            '_null' => ["(#{@column} IS NULL)"],
+            '_not_null' => ["(#{@column} IS NOT NULL)"],
+            '_empty' => ["(#{@column} = '')"],
+            '_not_empty' => ["(#{@column} != '')"],
           }
         end
 
       private
+
+        def range_filter(min, max)
+          if min && max
+            {@column => (min..max)}
+          elsif min
+            ["(n.#{@column} >= ?)", min]
+          elsif max
+            ["(n.#{@column} <= ?)", max]
+          end
+        end
 
         def build_statement_for_type
           case @type
@@ -241,17 +285,22 @@ module RailsAdmin
           when :integer, :decimal, :float then build_statement_for_integer_decimal_or_float
           when :string, :text             then build_statement_for_string_or_text
           when :enum                      then build_statement_for_enum
-            # when :belongs_to_association, :bson_object_id then build_statement_for_belongs_to_association_or_bson_object_id
+          when :belongs_to_association    then build_statement_for_belongs_to_association
           end
         end
 
         def build_statement_for_boolean
-          return {@column => false} if %w(false f 0).include?(@value)
-          return {@column => true} if %w(true t 1).include?(@value)
+          return ["(n.#{@column} IS NULL OR n.#{@column} = ?)", false] if %w(false f 0).include?(@value)
+          return ["(n.#{@column} = ?)", true] if %w(true t 1).include?(@value)
         end
 
         def column_for_value(value)
-          {@column => value}
+          ["(n.#{@column} = ?)", value]
+        end
+
+        def build_statement_for_belongs_to_association
+          return if @value.blank?
+          ["(#{@column} = ?)", @value.to_i] if @value.to_i.to_s == @value
         end
 
         def build_statement_for_string_or_text
@@ -259,42 +308,23 @@ module RailsAdmin
           @value = begin
             case @operator
             when 'default', 'like'
-              Regexp.compile(".*#{Regexp.escape(@value)}.*", Regexp::IGNORECASE)
+              ".*#{@value.downcase}.*"
             when 'starts_with'
-              Regexp.compile("#{Regexp.escape(@value).*}", Regexp::IGNORECASE)
+              "#{@value.downcase}.*"
             when 'ends_with'
-              Regexp.compile(".*#{Regexp.escape(@value)}", Regexp::IGNORECASE)
+              ".*#{@value.downcase}"
             when 'is', '='
-              @value.to_s
+              "#{@value.downcase}"
             else
               return
             end
           end
-          {@column => @value}
+          ["(LOWER(#{@column}) =~ ?)", @value]
         end
 
         def build_statement_for_enum
           return if @value.blank?
-          {@column => {'$in' => Array.wrap(@value)}}
-        end
-
-        def build_statement_for_belongs_to_association_or_bson_object_id
-          object_id = (object_id_from_string(@value) rescue nil)
-          {@column => object_id} if object_id
-        end
-
-        def range_filter(min, max)
-          if min && max
-            {@column => (min..max)}
-          elsif min
-            "n.#{@column} >= #{min}" # Params???
-          elsif max
-            "n.#{@column} <= #{max}" # Params???
-          end
-        end
-
-        def object_id_from_string(str)
-          ObjectId.from_string(str)
+          ["(#{@column} IN (?))", Array.wrap(@value)]
         end
       end
     end

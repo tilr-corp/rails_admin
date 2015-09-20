@@ -6,7 +6,7 @@ class Fan
 
   property :name, type: String
 
-  has_and_belongs_to_many :teams
+  has_many :in, :teams, type: :HAS_FAN
 
   validates_presence_of(:name)
 end

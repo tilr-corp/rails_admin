@@ -5,7 +5,7 @@ class League
   property :created_at, type: DateTime
   property :updated_at, type: DateTime
 
-  has_many :in, :divisions, type: 'CUSTOM_LEAGUE'
+  has_many :in, :divisions, type: :CUSTOM_LEAGUE
 
   validates_presence_of(:name)
 

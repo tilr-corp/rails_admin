@@ -11,6 +11,6 @@ class NestedFieldTest
 
   has_many :in, :deeply_nested_field_tests, origin: :nested_field_test
   #accepts_nested_attributes_for :deeply_nested_field_tests, allow_destroy: true
-  has_one :comment, as: :commentable, autosave: true
+  has_one :in, :comment, origin: :commentable
   #accepts_nested_attributes_for :comment, allow_destroy: true, reject_if: proc { |attributes| attributes['content'].blank? }
 end

@@ -6,19 +6,19 @@ require 'rails_admin/version'
 Gem::Specification.new do |spec|
   # If you add a dependency, please maintain alphabetical order
   spec.add_dependency 'builder', '~> 3.1'
-  spec.add_dependency 'coffee-rails', '~> 4.0'
+  spec.add_dependency 'coffee-rails', '~> 5.0'
   spec.add_dependency 'font-awesome-rails', ['>= 3.0', '< 5']
   spec.add_dependency 'haml', '~> 4.0'
   spec.add_dependency 'jquery-rails', ['>= 3.0', '< 5']
   spec.add_dependency 'jquery-ui-rails', '~> 5.0'
-  spec.add_dependency 'kaminari', '~> 0.14'
+  spec.add_dependency 'kaminari', '~> 1.0'
   spec.add_dependency 'kaminari-neo4j', '~> 0.0.2' # TODO: How to include this only for neo4j?
   spec.add_dependency 'nested_form', '~> 0.3'
   spec.add_dependency 'rack-pjax', '~> 0.7'
   spec.add_dependency 'rails', '~> 5.0'
   spec.add_dependency 'remotipart', '~> 1.0'
   spec.add_dependency 'safe_yaml', '~> 1.0'
-  spec.add_dependency 'sass-rails', ['>= 4.0', '< 6']
+  spec.add_dependency 'sass-rails', ['>= 4.0', '< 7']
   spec.add_development_dependency 'bundler', '~> 1.0'
   spec.authors = ['Erik Michaels-Ober', 'Bogdan Gaza', 'Petteri Kaapa', 'Benoit Benezech', 'Mitsuhiro Shibuya']
   spec.description = 'RailsAdmin is a Rails engine that provides an easy-to-use interface for managing your data.'

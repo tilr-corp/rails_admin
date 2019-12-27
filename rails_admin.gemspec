@@ -15,7 +15,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'kaminari-neo4j', '~> 0.0.2' # TODO: How to include this only for neo4j?
   spec.add_dependency 'nested_form', '~> 0.3'
   spec.add_dependency 'rack-pjax', '~> 0.7'
-  spec.add_dependency 'rails', '~> 4.0'
+  spec.add_dependency 'rails', '~> 5.0'
   spec.add_dependency 'remotipart', '~> 1.0'
   spec.add_dependency 'safe_yaml', '~> 1.0'
   spec.add_dependency 'sass-rails', ['>= 4.0', '< 6']
